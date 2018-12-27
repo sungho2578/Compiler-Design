@@ -1,0 +1,129 @@
+/*
+	CS152 Fall 2018 Project Phase 2
+	Parser Generation Using Bison
+	William Vagharfard, SID: 860792866
+	Sungho Ahn, SID: 862026328
+*/
+
+TERMINAL  - terminal or token all uppercase
+Non-terminal - capitalized
+epsilon -> (e)
+
+
+Program      -> functions
+
+Function     -> FUNCTION IDENTIFIER ';' BEGINPARAMS declarations ';' ENDPARAMS
+               BEGINLOCALS Declaration ';' ENDLOCALS BEGINBODY Statement ';'
+               ENDBODY
+
+functions    -> Function functions | (e)
+declarations -> Declaration ';' declarations | (e)
+statements   -> Statement ';' statements | (e)
+vars         -> Var ',' vars | (e)
+identifiers  -> IDENTIFIER ',' identifiers | (e)
+expressions  -> Expression ',' expressions | (e)
+Declaration  -> identifiers ':' INTEGER
+              | identifiers ':' Array
+
+    # i, j, k: integer;
+     # this is identified by identifiers and Declaration rules
+     # "i, j, k" are id by identifiers
+     # "integer" is id by Declaration INTEGER
+
+
+Array        -> ARRAY '[' NUMBER ']' OF INTEGER
+
+
+Statement    -> Var ':=' Expression
+              | If-Statement
+              | WHILE Bool-Expr BEGINLOOP statements ';' ENDLOOP
+              | DO BEGINLOOP statements ENDLOOP WHILE Bool-Expr
+              | READ vars
+              | WRITE vars
+              | CONTINUE
+              | RETURN Expression
+    # read i, j;
+        # this is identified by the Statement-READ rule
+        # the "read" is id by READ, and the "i, j" by the vars
+
+    # write i, j, k;
+        # this is identified by the Statement-WRITE rule
+        # the "write" is id by WRITE, and the "i, j, k" by the vars
+
+    # if k % 2 == 0 then
+    #   continue;
+        # is identified by the If-Statement rule and the CONTINUE rule
+        # "if ... then" is id by the If-Statement rule
+        # "k % 2 == 0" is id by the relation-exprs rule
+        # "continue" is id by the CONTINUE rule
+
+    # while  i >= j or false
+    # beginloop
+    # ...
+    # endloop;
+        # is identified by the Statement-WHILE rule,
+        # the "while" gets WHILE and the "i>=j" gets the Bool-Expr
+        # then comes beginloop, statements, and endloop
+
+
+   # do
+   # beginloop
+   # ...
+   # endloop
+   # while k < n;
+        # is identified by the Statement-DO rule,
+        # the "do" gets id by DO
+        # then the beginloop, statements, and endloop get id'd
+        # finally the "while" and "k < n" get from the WHILE and Bool-Expr
+
+If-Statement -> IF Bool-Exp THEN statements ';' ENDIF
+              | IF Bool-Exp THEN statements ';' ELSE statements ';' ENDIF
+
+Bool-Expr    -> Relation-And-Expr
+              | Relation-And-Expr OR Relation-And-Expr
+
+Relation-And-Expr   -> Relation-Expr
+                     | Relation-Expr AND Relation-Expr
+
+Relation-Expr  -> relation-exprs | NOT relation-exprs
+
+relation-exprs -> Expression Comp Expression
+                | TRUE
+                | FALSE
+                | '(' Bool-Expr ')'
+
+    # if i<j and j < n and i>=0 then
+        # is identified by the If-Statement, the Bool-Expr, the Relation-And-Expr, and the relation-exprs rule
+        # if .... then is from the If-statement rule
+        # ... and ... is from the Relation-And-Expr rule
+        # i<j, j<n, i>=0 are from the relation-exprs rule
+
+
+
+
+Comp        -> '=='
+             | '<>'
+             | '<'
+             | '>'
+             | '<='
+             | '>='
+
+Expression  -> Multiplicative-Expr
+             | Multiplicative-Expr '+' Multiplicative-Expr
+             | Multiplicative-Expr '-' Multiplicative-Expr
+
+Multiplicative-Expr -> Term
+                     | Term '*' Term
+                     | Term '/' Term
+                     | Term '%' Term
+
+Term        -> Var
+             | NUMBER
+             | '(' Expression ')'
+             | '-' Var
+             | '-' NUMBER
+             | '-' '(' Expression ')'
+             | IDENTIFIER '(' expressions ')'
+
+Var         -> IDENTIFIER
+             | IDENTIFIER '[' Expression ']'
